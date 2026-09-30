@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Black Sheep 🐑 - TV Host Screen</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="tv-screen-container" id="app">
+    <!-- TOP HUD BAR (Always visible during game) -->
+    <div class="tv-hud-bar">
+      <!-- Round Indicator -->
+      <div class="round-badge" id="hudRoundBadge">
+        <span>🐑</span> <span id="roundNumberText">LOBBY</span>
+      </div>
+
+      <!-- Center Timer Bubble -->
+      <div class="timer-bubble" id="timerBubble" style="display: none;">
+        <span id="timerSeconds">30</span>
+      </div>
+
+      <!-- Right Persistent Mini QR & Room Code -->
+      <div class="qr-mini-badge" id="hudQrBadge">
+        <div>
+          <div style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted);">JOIN AT /PLAY</div>
+          <div class="qr-mini-code" id="hudRoomCode">....</div>
+        </div>
+        <img id="hudQrImg" src="" alt="Scan QR">
+      </div>
+    </div>
+
+    <!-- MAIN STAGE -->
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%;">
+      
+      <!-- 1. LOBBY VIEW -->
+      <div id="lobbyStage" class="glass-container" style="max-width: 650px;">
+        <h1>🐑 BLACK SHEEP</h1>
+        <p class="subtitle">Think like the flock. Avoid the Black Sheep curse!</p>
+
+        <div style="margin: 1.5rem 0;">
+          <div style="font-size: 1.1rem; font-weight: 800; color: #475569;">ROOM CODE:</div>
+          <div style="font-size: 3.5rem; font-weight: 900; letter-spacing: 0.15em; color: #0f172a;" id="lobbyCodeBig">
+            ....
+          </div>
+          <p style="font-weight: 700; color: #15803d; margin-top: 0.25rem;" id="lobbyJoinUrlText"></p>
+        </div>
+
+        <p style="font-weight: 800; color: var(--text-muted); margin-bottom: 0.5rem;">
+          PLAYERS IN THE PEN (<span id="lobbyCount">0</span>)
+        </p>
+        <p id="lobbyEmptyNote" style="color: #64748b; font-weight: 600;">
+          Point phone camera at the QR code in the corner to join!
+        </p>
+
+        <div style="margin-top: 2rem;">
+          <button id="startBtn" class="btn btn-large" onclick="startGame()" disabled>
+            Start Game 🌾
+          </button>
+        </div>
+        <p style="font-size: 0.9rem; color: #64748b; font-weight: 700; margin-top: 0.75rem;">
+          (Need at least 2 players, 3+ recommended)
+        </p>
+      </div>
+
+      <!-- 2. QUESTION VIEW (Cartoon Cloud) -->
+      <div id="questionStage" class="question-bubble-wrap" style="display: none;">
+        <div class="question-cloud-card">
+          <div class="question-pill-header" id="questionPill">QUESTION 1</div>
+          <div class="question-cloud-text" id="questionCloudText">
+            LOADING QUESTION...
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <button id="revealBtn" class="btn" style="font-size: 1.3rem; padding: 0.85rem 2rem;" onclick="scoreRound()">
+            Reveal Answers 📣
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. RESULTS VIEW -->
+      <div id="resultsStage" class="glass-container" style="max-width: 820px; display: none;">
+        <h2 id="resultsRoundTitle">Round Results</h2>
+        <p class="subtitle" id="resultsQuestionSubtitle"></p>
+
+        <div id="roundOutcomeBanner" class="alert-card"></div>
+
+        <div class="answer-groups-list" id="answerGroupsList"></div>
+
+        <div style="margin-top: 1.5rem;">
+          <button class="btn btn-large" onclick="nextRound()">
+            Next Question 🐑
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. GAME OVER VIEW -->
+      <div id="gameOverStage" class="glass-container" style="max-width: 700px; display: none;">
+        <div style="font-size: 4rem;">👑 🐑 👑</div>
+        <h1 id="winnerTitle" style="color: #15803d; margin: 0.5rem 0;">Winner!</h1>
+        <p class="subtitle" style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">
+          First to 8 Wool Tokens without the Black Sheep!
+        </p>
+
+        <div style="margin-top: 2rem;">
+          <button class="btn btn-large" onclick="resetGame()">Play Again 🔄</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM PERSISTENT PLAYER DOCK (Shows all players & their answer status live!) -->
+    <div class="bottom-players-dock" id="bottomPlayersDock">
+      <div style="color: #64748b; font-weight: 700; font-size: 0.95rem;">
+        Waiting for players to join...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Web Audio Synthesizer
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    function getAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudio();
+        const now = ctx.currentTime;
+        if (type === 'pop') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(350, now);
+          osc.frequency.exponentialRampToValueAtTime(750, now + 0.08);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'baa') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.linearRampToValueAtTime(175, now + 0.25);
+          osc.frequency.linearRampToValueAtTime(195, now + 0.45);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        } else if (type === 'bell') {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(587.33, now);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        } else if (type === 'win') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + i * 0.14);
+            gain.gain.setValueAtTime(0.3, now + i * 0.14);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.14 + 0.35);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + i * 0.14);
+            osc.stop(now + i * 0.14 + 0.35);
+          });
+        }
+      } catch (e) {
+        console.warn('Audio failed', e);
+      }
+    }
+
+    let ws;
+    let roomCode = null;
+    let roomState = null;
+    let timerInterval = null;
+    let timeLeft = 30;
+    let knownPlayerCount = 0;
+
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ type: 'host_create_room' }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleServerMessage(data);
+      };
+
+      ws.onclose = () => {
+        setTimeout(initWebSocket, 3000);
+      };
+    }
+
+    function handleServerMessage(data) {
+      switch (data.type) {
+        case 'room_created':
+          roomCode = data.roomCode;
+          document.getElementById('hudRoomCode').textContent = roomCode;
+          document.getElementById('lobbyCodeBig').textContent = roomCode;
+          const joinUrl = `${window.location.origin}/join/${roomCode}`;
+          document.getElementById('lobbyJoinUrlText').textContent = joinUrl;
+          document.getElementById('hudQrImg').src = `/api/qr?text=${encodeURIComponent(joinUrl)}`;
+          updateRoom(data.room);
+          break;
+
+        case 'room_state':
+          updateRoom(data.room);
+          break;
+
+        case 'answer_progress':
+          if (roomState) {
+            updateBottomDock();
+          }
+          break;
+
+        case 'all_answers_in':
+          playSound('bell');
+          const btn = document.getElementById('revealBtn');
+          btn.style.background = '#22c55e';
+          btn.textContent = 'All Answers In! Reveal 📣';
+          break;
+
+        case 'round_scored':
+          updateRoom(data.room);
+          displayResults(data.result);
+          break;
+      }
+    }
+
+    function updateRoom(state) {
+      if (!state) return;
+      roomState = state;
+
+      if (state.phase === 'LOBBY' && state.players.length > knownPlayerCount) {
+        playSound('pop');
+      }
+      knownPlayerCount = state.players.length;
+
+      // Update Top HUD
+      if (state.phase === 'LOBBY') {
+        document.getElementById('roundNumberText').textContent = 'LOBBY';
+        document.getElementById('timerBubble').style.display = 'none';
+      } else {
+        document.getElementById('roundNumberText').textContent = `ROUND ${state.questionIndex}`;
+        document.getElementById('timerBubble').style.display = state.phase === 'QUESTION' ? 'block' : 'none';
+      }
+
+      // Switch Main Stage
+      document.getElementById('lobbyStage').style.display = state.phase === 'LOBBY' ? 'block' : 'none';
+      document.getElementById('questionStage').style.display = state.phase === 'QUESTION' ? 'flex' : 'none';
+      document.getElementById('resultsStage').style.display = state.phase === 'SCORED' ? 'block' : 'none';
+      document.getElementById('gameOverStage').style.display = state.phase === 'GAME_OVER' ? 'block' : 'none';
+
+      // Always update bottom player dock
+      updateBottomDock();
+
+      if (state.phase === 'LOBBY') {
+        renderLobby();
+      } else if (state.phase === 'QUESTION') {
+        renderQuestion();
+      } else if (state.phase === 'GAME_OVER') {
+        renderGameOver();
+      }
+    }
+
+    function renderLobby() {
+      const count = roomState.players.length;
+      document.getElementById('lobbyCount').textContent = count;
+      document.getElementById('lobbyEmptyNote').style.display = count === 0 ? 'block' : 'none';
+      document.getElementById('startBtn').disabled = count < 2;
+    }
+
+    function startGame() {
+      playSound('bell');
+      ws.send(JSON.stringify({ type: 'host_start_round' }));
+    }
+
+    function renderQuestion() {
+      document.getElementById('questionPill').textContent = `QUESTION ${roomState.questionIndex}`;
+      document.getElementById('questionCloudText').textContent = roomState.currentQuestion;
+
+      const btn = document.getElementById('revealBtn');
+      btn.style.background = 'var(--primary)';
+      btn.textContent = 'Reveal Answers 📣';
+
+      startTimer(roomState.roundTimerSeconds || 30);
+    }
+
+    function startTimer(duration) {
+      clearInterval(timerInterval);
+      timeLeft = duration;
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          playSound('baa');
+          scoreRound();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const bubble = document.getElementById('timerBubble');
+      const secEl = document.getElementById('timerSeconds');
+      secEl.textContent = timeLeft;
+
+      if (timeLeft <= 10) {
+        bubble.classList.add('urgent');
+      } else {
+        bubble.classList.remove('urgent');
+      }
+    }
+
+    function scoreRound() {
+      clearInterval(timerInterval);
+      ws.send(JSON.stringify({ type: 'host_score_round' }));
+    }
+
+    function displayResults(result) {
+      document.getElementById('resultsRoundTitle').textContent = `Round ${roomState.questionIndex} Results`;
+      document.getElementById('resultsQuestionSubtitle').textContent = `"${result.question}"`;
+
+      const banner = document.getElementById('roundOutcomeBanner');
+      if (result.isTie) {
+        banner.className = 'alert-card alert-sheep';
+        banner.innerHTML = '⚡ <strong>Split Flock!</strong> Multiple answers tied for majority — 0 Wool awarded.';
+      } else if (result.winningPlayerIds.length > 0) {
+        banner.className = 'alert-card alert-flock';
+        banner.innerHTML = `🐑 <strong>Flock Accord!</strong> "${escapeHtml(result.majorityAnswer)}" was the majority (+1 Wool)!`;
+        playSound('bell');
+      }
+
+      if (result.blackSheepRecipientId) {
+        const recipient = roomState.players.find(p => p.id === result.blackSheepRecipientId);
+        playSound('baa');
+        banner.innerHTML += `<br>🖤 <strong>New Black Sheep:</strong> ${recipient ? escapeHtml(recipient.name) : 'A player'} was the sole odd-one-out!`;
+      }
+
+      const listEl = document.getElementById('answerGroupsList');
+      listEl.innerHTML = result.groups.map(g => {
+        const isBlackSheepGroup = result.blackSheepRecipientId && g.players.some(p => p.id === result.blackSheepRecipientId);
+        const rowClass = g.isWinner ? 'winner' : (isBlackSheepGroup ? 'black-sheep-row' : '');
+        const icon = isBlackSheepGroup ? '🖤' : (g.isWinner ? '🐑' : '▫️');
+
+        return `
+          <div class="answer-group-item ${rowClass}">
+            <div>
+              <div class="answer-title">${icon} "${escapeHtml(g.answer)}"</div>
+              <div class="answer-players">${g.players.map(p => escapeHtml(p.name)).join(', ')}</div>
+            </div>
+            <div class="answer-count-badge">
+              <span>${g.count}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function nextRound() {
+      ws.send(JSON.stringify({ type: 'host_next_round' }));
+    }
+
+    function renderGameOver() {
+      playSound('win');
+      const winner = roomState.winner;
+      document.getElementById('winnerTitle').textContent = `${winner.name} Wins! 👑`;
+    }
+
+    function resetGame() {
+      ws.send(JSON.stringify({ type: 'host_reset_game' }));
+    }
+
+    // Bottom persistent player row
+    function updateBottomDock() {
+      const dock = document.getElementById('bottomPlayersDock');
+      if (!roomState || roomState.players.length === 0) {
+        dock.innerHTML = '<div style="color: #64748b; font-weight: 700;">Waiting for players to join with their phones...</div>';
+        return;
+      }
+
+      dock.innerHTML = roomState.players.map(p => {
+        const isBlack = p.id === roomState.blackSheepHolderId;
+        const icon = isBlack ? '🖤' : '🐑';
+        const isQuestionPhase = roomState.phase === 'QUESTION';
+        const statusClass = isQuestionPhase
+          ? (p.hasAnswered ? 'answered' : 'thinking')
+          : '';
+
+        const checkMark = isQuestionPhase
+          ? (p.hasAnswered ? '<span style="color:#16a34a; font-weight:900;">✓</span>' : '<span style="opacity:0.5;">...</span>')
+          : '';
+
+        return `
+          <div class="player-avatar-card ${statusClass} ${isBlack ? 'is-black-sheep' : ''}">
+            <span class="avatar-icon">${icon}</span>
+            <span>${escapeHtml(p.name)}</span>
+            ${checkMark}
+            <span class="wool-tag">🐑 ${p.score}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.onload = initWebSocket;
+  </script>
+</body>
+</html>

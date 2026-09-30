@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Black Sheep 🐑 - Player Controller</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body style="padding-top: 1rem; justify-content: flex-start;">
+
+  <div class="glass-container mobile-card" id="app">
+    
+    <!-- 1. JOIN SCREEN -->
+    <div id="joinScreen">
+      <h1>🐑 Black Sheep</h1>
+      <p class="subtitle">Think like the flock. Avoid the Black Sheep curse!</p>
+
+      <form onsubmit="handleJoin(event)">
+        <div style="text-align: left; margin-bottom: 0.35rem; font-weight: 800; color: #475569; font-size: 0.95rem;">
+          ROOM CODE:
+        </div>
+        <input type="text" id="roomCodeInput" maxlength="4" placeholder="e.g. WOOL" autocomplete="off" autocapitalize="characters" required>
+
+        <div style="text-align: left; margin-bottom: 0.35rem; font-weight: 800; color: #475569; font-size: 0.95rem;">
+          YOUR NICKNAME:
+        </div>
+        <input type="text" id="nameInput" maxlength="14" placeholder="e.g. Baaa-rbara" autocomplete="off" required>
+
+        <button type="submit" class="btn btn-large" id="joinBtn">
+          Join The Flock 🌾
+        </button>
+      </form>
+      <p id="joinError" style="color: #dc2626; font-weight: 800; margin-top: 1rem; display: none;"></p>
+    </div>
+
+    <!-- 2. LOBBY WAITING SCREEN -->
+    <div id="lobbyScreen" style="display: none;">
+      <div style="font-size: 3.5rem; margin: 0.5rem 0;">🌾 🐑 🌾</div>
+      <h2>You're In The Pen!</h2>
+      <p class="subtitle" style="margin-bottom: 1rem;">
+        Playing as <strong id="lobbyPlayerName" style="color: #0f172a;">...</strong>
+      </p>
+
+      <div class="alert-card alert-flock">
+        Grazing peacefully... look up at the TV screen!
+      </div>
+
+      <div class="sheep-bottom-illustration">
+        <span>🐑</span><span>🐑</span><span>🐑</span>
+      </div>
+    </div>
+
+    <!-- 3. QUESTION & ANSWER SCREEN (Matches Big Potato Phone Layout) -->
+    <div id="questionScreen" style="display: none;">
+      <div class="phone-teal-header">QUESTION</div>
+      
+      <div class="phone-question-text" id="phoneQuestionText">
+        WHO IS THE GREATEST SPRINGBOK RUGBY PLAYER OF ALL TIME?
+      </div>
+
+      <!-- State A: Form to type and lock in answer -->
+      <div id="answerFormWrap">
+        <form onsubmit="handleAnswer(event)">
+          <input type="text" id="answerInput" placeholder="Type your answer..." autocomplete="off" required autofocus>
+          <button type="submit" class="btn btn-large" id="submitAnswerBtn">
+            Lock In Answer 🐑
+          </button>
+        </form>
+        <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 700; margin-top: 0.75rem;">
+          Think what everyone else will say!
+        </p>
+      </div>
+
+      <!-- State B: Answer locked in (Same screen, like in screenshot) -->
+      <div id="answerLockedWrap" style="display: none;">
+        <div class="phone-locked-box">
+          <div style="font-size: 0.9rem; font-weight: 800; color: #166534; text-transform: uppercase;">
+            YOUR LOCKED ANSWER:
+          </div>
+          <div class="phone-locked-answer" id="lockedAnswerDisplay">"..."</div>
+          <div style="font-size: 0.85rem; font-weight: 700; color: #475569;">
+            Waiting for other players to lock in...
+          </div>
+        </div>
+
+        <!-- Fun interactive Baa button! -->
+        <div class="baa-button-banner" onclick="baaAtThem()">
+          <span>🐑</span>
+          <span>TAP TO BAAA AT SLOW SHEEP!</span>
+          <span>📢</span>
+        </div>
+      </div>
+
+      <div class="sheep-bottom-illustration">
+        <span>🐑</span><span id="phoneBlackSheepIcon">🐑</span><span>🐑</span>
+      </div>
+    </div>
+
+    <!-- 4. ROUND RESULT SCREEN -->
+    <div id="resultScreen" style="display: none;">
+      <div id="personalFeedbackBanner" class="alert-card"></div>
+
+      <div style="background: #f8fafc; border: 3px solid #0f172a; border-radius: 1.25rem; padding: 1.25rem; margin: 1.25rem 0;">
+        <div style="font-size: 1rem; font-weight: 800; color: #64748b; text-transform: uppercase;">
+          Your Total Wool Tokens
+        </div>
+        <div id="personalWoolDisplay" style="font-size: 2.5rem; font-weight: 900; color: var(--primary); margin: 0.25rem 0;">
+          🐑 0
+        </div>
+        <div id="personalCurseNote" style="font-size: 0.95rem; font-weight: 800; color: #dc2626; display: none;">
+          🖤 YOU HOLD THE BLACK SHEEP!
+        </div>
+      </div>
+
+      <p style="color: #475569; font-weight: 700;">
+        Look up at the TV screen for full answer reveals!
+      </p>
+
+      <div class="sheep-bottom-illustration">
+        <span>🌾</span><span>🐑</span><span>🌾</span>
+      </div>
+    </div>
+
+    <!-- 5. GAME OVER SCREEN -->
+    <div id="gameOverScreen" style="display: none;">
+      <div style="font-size: 4rem;">👑 🐑 👑</div>
+      <h2 id="phoneWinnerTitle" style="color: #15803d; margin: 0.5rem 0;">Game Over!</h2>
+      <p id="phoneWinnerSub" class="subtitle"></p>
+    </div>
+
+  </div>
+
+  <script>
+    // Web Audio Synthesizer for Baa sound
+    let audioCtx = null;
+    function playBaa() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(230, now);
+        osc.frequency.linearRampToValueAtTime(170, now + 0.25);
+        osc.frequency.linearRampToValueAtTime(190, now + 0.45);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } catch (e) {}
+    }
+
+    function baaAtThem() {
+      playBaa();
+      if (navigator.vibrate) navigator.vibrate(100);
+    }
+
+    let ws;
+    let myPlayerId = localStorage.getItem('black_sheep_player_id') || ('p_' + Math.random().toString(36).substring(2, 9));
+    localStorage.setItem('black_sheep_player_id', myPlayerId);
+
+    let myPlayerName = '';
+    let currentRoomCode = '';
+
+    // Auto-detect room code from URL
+    const pathParts = window.location.pathname.split('/');
+    if (pathParts.length >= 3 && pathParts[1] === 'join') {
+      currentRoomCode = pathParts[2].toUpperCase().trim();
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('room')) {
+        currentRoomCode = urlParams.get('room').toUpperCase().trim();
+      }
+    }
+
+    if (currentRoomCode) {
+      document.getElementById('roomCodeInput').value = currentRoomCode;
+    }
+
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleServerMessage(data);
+      };
+
+      ws.onclose = () => {
+        setTimeout(initWebSocket, 3000);
+      };
+    }
+
+    function handleServerMessage(data) {
+      switch (data.type) {
+        case 'join_success':
+          document.getElementById('lobbyPlayerName').textContent = data.player.name;
+          showScreen('lobbyScreen');
+          updatePlayerState(data.room);
+          break;
+
+        case 'join_error':
+          const errEl = document.getElementById('joinError');
+          errEl.textContent = data.message;
+          errEl.style.display = 'block';
+          document.getElementById('joinBtn').disabled = false;
+          break;
+
+        case 'room_state':
+          updatePlayerState(data.room);
+          break;
+
+        case 'answer_confirmed':
+          document.getElementById('lockedAnswerDisplay').textContent = `"${escapeHtml(data.answer)}"`;
+          document.getElementById('answerFormWrap').style.display = 'none';
+          document.getElementById('answerLockedWrap').style.display = 'block';
+          break;
+
+        case 'round_scored':
+          handleRoundScored(data.result, data.room);
+          break;
+      }
+    }
+
+    function updatePlayerState(room) {
+      if (!room) return;
+      const me = room.players.find(p => p.id === myPlayerId);
+
+      if (room.phase === 'LOBBY') {
+        showScreen('lobbyScreen');
+      } else if (room.phase === 'QUESTION') {
+        showScreen('questionScreen');
+        document.getElementById('phoneQuestionText').textContent = room.currentQuestion;
+
+        if (me && me.hasBlackSheep) {
+          document.getElementById('phoneBlackSheepIcon').textContent = '🖤';
+        } else {
+          document.getElementById('phoneBlackSheepIcon').textContent = '🐑';
+        }
+
+        if (me && me.hasAnswered) {
+          document.getElementById('answerFormWrap').style.display = 'none';
+          document.getElementById('answerLockedWrap').style.display = 'block';
+        } else {
+          document.getElementById('answerInput').value = '';
+          document.getElementById('answerFormWrap').style.display = 'block';
+          document.getElementById('answerLockedWrap').style.display = 'none';
+          document.getElementById('submitAnswerBtn').disabled = false;
+          setTimeout(() => document.getElementById('answerInput').focus(), 150);
+        }
+      } else if (room.phase === 'GAME_OVER') {
+        showScreen('gameOverScreen');
+        const winner = room.winner;
+        if (winner && winner.id === myPlayerId) {
+          document.getElementById('phoneWinnerTitle').textContent = '👑 YOU WON! 🐑';
+          document.getElementById('phoneWinnerSub').textContent = 'You proved you have the true flock mind!';
+        } else {
+          document.getElementById('phoneWinnerTitle').textContent = `${winner.name} Won! 👑`;
+          document.getElementById('phoneWinnerSub').textContent = 'Better luck thinking like the flock next time!';
+        }
+      }
+    }
+
+    function handleRoundScored(result, room) {
+      showScreen('resultScreen');
+      const me = room.players.find(p => p.id === myPlayerId);
+      const score = me ? me.score : 0;
+      const holdsCurse = me && me.hasBlackSheep;
+
+      document.getElementById('personalWoolDisplay').textContent = `🐑 ${score}`;
+      document.getElementById('personalCurseNote').style.display = holdsCurse ? 'block' : 'none';
+
+      const banner = document.getElementById('personalFeedbackBanner');
+
+      if (result.blackSheepRecipientId === myPlayerId) {
+        banner.className = 'alert-card alert-sheep';
+        banner.innerHTML = '🖤 <strong>BAAA! YOU ARE THE BLACK SHEEP!</strong><br>Your answer was completely unique. You cannot win until someone else takes the curse!';
+        playBaa();
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      } else if (result.winningPlayerIds.includes(myPlayerId)) {
+        banner.className = 'alert-card alert-flock';
+        banner.innerHTML = '🐑 <strong>FLOCK VICTORY!</strong><br>You answered with the majority! +1 Wool Token!';
+        if (navigator.vibrate) navigator.vibrate(200);
+      } else if (result.isTie) {
+        banner.className = 'alert-card';
+        banner.style.background = '#e2e8f0';
+        banner.style.color = '#334155';
+        banner.innerHTML = '⚡ <strong>Tied Round!</strong><br>No group had an outright majority — no wool scored.';
+      } else {
+        banner.className = 'alert-card';
+        banner.style.background = '#f1f5f9';
+        banner.style.color = '#475569';
+        banner.innerHTML = '🌾 <strong>Safe in the Flock</strong><br>You missed the majority, but escaped the Black Sheep curse.';
+      }
+    }
+
+    function handleJoin(e) {
+      e.preventDefault();
+      const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+      const name = document.getElementById('nameInput').value.trim();
+      if (!code || !name) return;
+
+      currentRoomCode = code;
+      myPlayerName = name;
+      document.getElementById('joinBtn').disabled = true;
+
+      ws.send(JSON.stringify({
+        type: 'player_join',
+        roomCode: currentRoomCode,
+        playerId: myPlayerId,
+        playerName: myPlayerName
+      }));
+    }
+
+    function handleAnswer(e) {
+      e.preventDefault();
+      const answer = document.getElementById('answerInput').value.trim();
+      if (!answer) return;
+
+      document.getElementById('submitAnswerBtn').disabled = true;
+      ws.send(JSON.stringify({
+        type: 'player_submit_answer',
+        answer: answer
+      }));
+    }
+
+    function showScreen(screenId) {
+      const screens = ['joinScreen', 'lobbyScreen', 'questionScreen', 'resultScreen', 'gameOverScreen'];
+      screens.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = id === screenId ? 'block' : 'none';
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.onload = initWebSocket;
+  </script>
+</body>
+</html>
