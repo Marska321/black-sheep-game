@@ -1,27 +1,102 @@
 [
-  "Who is the greatest Springbok rugby player of all time?",
-  "What is the best South African braai meat?",
-  "What is the best flavour of Ghost Pops?",
-  "Who is the best Marvel superhero?",
-  "What is the best sport to watch on TV with the family?",
-  "What is the best thing to buy at a school tuck shop?",
-  "What is the best flavour of Simba chips?",
-  "Who is the best soccer player in the world right now?",
-  "What is the best thing to do at the beach in Durban or Cape Town?",
-  "What is the best South African national park to visit?",
-  "What is the best biscuit you can get in South Africa?",
-  "Who is the most famous South African in the world?",
-  "What is the best South African slang word everyone uses?",
-  "What is the best subject in primary school?",
-  "What is the best topping on a pizza?",
-  "What is the best ice cream flavour on a hot day?",
-  "What is the cutest farm animal?",
-  "What is the best pet for a kid to have?",
-  "What is the best cartoon or animated movie of all time?",
-  "What is the best snack to eat during a road trip?",
-  "Who is the best cricketer South Africa has ever produced?",
-  "What is the best fast food restaurant in South Africa?",
-  "What is the best thing about a South African summer holiday?",
-  "What is the coolest wild animal you can see on a safari?",
-  "What is the best sweet treat or pudding after a Sunday braai?"
+  {
+    "question": "Who is the greatest Springbok rugby player of all time?",
+    "options": ["Siya Kolisi", "Bryan Habana", "Cheslin Kolbe", "Faf de Klerk"]
+  },
+  {
+    "question": "What is the best South African braai meat?",
+    "options": ["Boerewors", "Lamb Chops", "T-Bone Steak", "Pork Ribs"]
+  },
+  {
+    "question": "What is the best biscuit you can get in South Africa?",
+    "options": ["Romany Creams", "Tennis Biscuits", "Marie Biscuits", "Eet-Sum-Mor"]
+  },
+  {
+    "question": "What is the best flavour of Simba chips?",
+    "options": ["Mrs H.S. Ball's Chutney", "Smoked Beef", "Salt & Vinegar", "Creamy Cheddar"]
+  },
+  {
+    "question": "What is the best South African slang word everyone uses?",
+    "options": ["Lekker", "Howzit", "Eish", "Yoh"]
+  },
+  {
+    "question": "Who is the best Marvel superhero?",
+    "options": ["Spider-Man", "Iron Man", "Black Panther", "Thor"]
+  },
+  {
+    "question": "What is the best fast food restaurant in South Africa?",
+    "options": ["Nando's", "Steers", "Wimpy", "Chicken Licken"]
+  },
+  {
+    "question": "What is the coolest wild animal to see on a safari?",
+    "options": ["Lion", "Elephant", "Leopard", "Cheetah"]
+  },
+  {
+    "question": "What is the best topping on a pizza?",
+    "options": ["Extra Cheese", "Pepperoni", "Pineapple & Bacon", "Mushrooms"]
+  },
+  {
+    "question": "What is the best ice cream flavour on a hot summer day?",
+    "options": ["Vanilla", "Chocolate", "Strawberry", "Cookie Dough"]
+  },
+  {
+    "question": "What is the best thing to buy at a school tuck shop?",
+    "options": ["Supa Dupa Pie", "Ice Pop / Slushy", "Choc Chip Cookie", "Fudge"]
+  },
+  {
+    "question": "What is the best sport to watch on TV with the family?",
+    "options": ["Rugby", "Soccer", "Cricket", "Formula 1"]
+  },
+  {
+    "question": "What is the best pet for a kid to have?",
+    "options": ["Golden Retriever Dog", "Ginger Cat", "Fluffy Rabbit", "Hamster"]
+  },
+  {
+    "question": "What is the best South African sweet treat after a braai?",
+    "options": ["Malva Pudding", "Koeksisters", "Peppermint Crisp Tart", "Milktart"]
+  },
+  {
+    "question": "Who is the most famous South African in the world?",
+    "options": ["Nelson Mandela", "Trevor Noah", "Siya Kolisi", "Elon Musk"]
+  },
+  {
+    "question": "What is the best thing to do at the beach in Durban or Cape Town?",
+    "options": ["Bodyboarding / Surfing", "Building Sandcastles", "Hunting for Shells", "Eating Ice Cream"]
+  },
+  {
+    "question": "What is the best snack to eat during a long family road trip?",
+    "options": ["Droëwors / Biltong", "Ghost Pops", "Sour Worms", "Pretzel Sticks"]
+  },
+  {
+    "question": "Who is the greatest soccer player in the world right now?",
+    "options": ["Lionel Messi", "Cristiano Ronaldo", "Kylian Mbappé", "Erling Haaland"]
+  },
+  {
+    "question": "What is the best cartoon or animated movie of all time?",
+    "options": ["The Lion King", "Shrek", "Toy Story", "Finding Nemo"]
+  },
+  {
+    "question": "What is the best subject in primary school?",
+    "options": ["Art", "Physical Education (PT)", "Science", "Break Time / Recess"]
+  },
+  {
+    "question": "What is the cutest farm animal?",
+    "options": ["Baby Lamb 🐑", "Piglet 🐷", "Calf 🐮", "Chicks 🐥"]
+  },
+  {
+    "question": "What is the best South African national park to visit?",
+    "options": ["Kruger National Park", "Table Mountain National Park", "Addo Elephant Park", "Tsitsikamma"]
+  },
+  {
+    "question": "Who is the best cricketer South Africa has ever produced?",
+    "options": ["AB de Villiers", "Jacques Kallis", "Dale Steyn", "Kagiso Rabada"]
+  },
+  {
+    "question": "What is the best thing about a South African summer holiday?",
+    "options": ["Swimming in the pool", "Going to the beach", "Braaing with family", "Sleeping in late"]
+  },
+  {
+    "question": "What is the best flavour of Ghost Pops?",
+    "options": ["Original Chutney", "Sweet Chilli", "Tomato Sauce", "Cheese"]
+  }
 ]

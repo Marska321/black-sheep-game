@@ -181,3 +181,24 @@ test('Player retaining Black Sheep cannot win even with 8 points', () => {
   assert.equal(result.winner, null);
   assert.notEqual(room.phase, PHASES.GAME_OVER);
 });
+
+test('Multiple choice question loading and serialization', () => {
+  const mcq = {
+    question: 'Best SA biscuit?',
+    options: ['Romany Creams', 'Tennis', 'Marie', 'Eet-Sum-Mor']
+  };
+  const engine = new GameEngine([mcq]);
+  const room = engine.createRoom('host-mc');
+  engine.joinRoom(room.code, 'p1', 'Alice');
+  engine.joinRoom(room.code, 'p2', 'Bob');
+
+  engine.startRound(room.code);
+
+  assert.equal(room.currentQuestion, 'Best SA biscuit?');
+  assert.equal(room.currentOptions.length, 4);
+  assert.equal(room.currentOptions[0], 'Romany Creams');
+
+  const serialized = engine.serializeRoom(room);
+  assert.equal(serialized.currentQuestion, 'Best SA biscuit?');
+  assert.deepEqual(serialized.currentOptions, ['Romany Creams', 'Tennis', 'Marie', 'Eet-Sum-Mor']);
+});

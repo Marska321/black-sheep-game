@@ -70,6 +70,7 @@
           <div class="question-cloud-text" id="questionCloudText">
             LOADING QUESTION...
           </div>
+          <div class="tv-options-grid" id="tvOptionsGrid"></div>
         </div>
 
         <div style="margin-top: 1.5rem;">
@@ -301,6 +302,21 @@
     function renderQuestion() {
       document.getElementById('questionPill').textContent = `QUESTION ${roomState.questionIndex}`;
       document.getElementById('questionCloudText').textContent = roomState.currentQuestion;
+
+      const optionsGrid = document.getElementById('tvOptionsGrid');
+      const letters = ['A', 'B', 'C', 'D'];
+      if (roomState.currentOptions && roomState.currentOptions.length > 0) {
+        optionsGrid.style.display = 'grid';
+        optionsGrid.innerHTML = roomState.currentOptions.map((opt, i) => `
+          <div class="tv-option-chip opt-theme-${i % 4}">
+            <span class="tv-option-letter">${letters[i] || (i + 1)}</span>
+            <span>${escapeHtml(opt)}</span>
+          </div>
+        `).join('');
+      } else {
+        optionsGrid.style.display = 'none';
+        optionsGrid.innerHTML = '';
+      }
 
       const btn = document.getElementById('revealBtn');
       btn.style.background = 'var(--primary)';

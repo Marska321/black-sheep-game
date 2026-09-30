@@ -58,16 +58,20 @@
         WHO IS THE GREATEST SPRINGBOK RUGBY PLAYER OF ALL TIME?
       </div>
 
-      <!-- State A: Form to type and lock in answer -->
+      <!-- State A: Form to pick option or lock in answer -->
       <div id="answerFormWrap">
-        <form onsubmit="handleAnswer(event)">
-          <input type="text" id="answerInput" placeholder="Type your answer..." autocomplete="off" required autofocus>
+        <!-- Multiple Choice Buttons Grid -->
+        <div id="phoneOptionsGrid" class="phone-options-grid"></div>
+
+        <!-- Optional text input fallback -->
+        <form id="textAnswerForm" onsubmit="handleAnswer(event)" style="display: none;">
+          <input type="text" id="answerInput" placeholder="Type your answer..." autocomplete="off">
           <button type="submit" class="btn btn-large" id="submitAnswerBtn">
             Lock In Answer 🐑
           </button>
         </form>
-        <p style="color: var(--text-muted); font-size: 0.9rem; font-weight: 700; margin-top: 0.75rem;">
-          Think what everyone else will say!
+        <p style="color: var(--text-muted); font-size: 0.95rem; font-weight: 800; margin-top: 0.5rem;">
+          Pick what the flock will choose! 🐑
         </p>
       </div>
 
@@ -245,11 +249,29 @@
           document.getElementById('answerFormWrap').style.display = 'none';
           document.getElementById('answerLockedWrap').style.display = 'block';
         } else {
-          document.getElementById('answerInput').value = '';
           document.getElementById('answerFormWrap').style.display = 'block';
           document.getElementById('answerLockedWrap').style.display = 'none';
-          document.getElementById('submitAnswerBtn').disabled = false;
-          setTimeout(() => document.getElementById('answerInput').focus(), 150);
+
+          const optGrid = document.getElementById('phoneOptionsGrid');
+          const textForm = document.getElementById('textAnswerForm');
+          const letters = ['A', 'B', 'C', 'D'];
+
+          if (room.currentOptions && room.currentOptions.length > 0) {
+            optGrid.style.display = 'flex';
+            textForm.style.display = 'none';
+            optGrid.innerHTML = room.currentOptions.map((opt, i) => `
+              <button type="button" class="phone-option-btn opt-theme-${i % 4}" onclick="selectOption('${escapeAttr(opt)}')">
+                <span class="phone-option-letter">${letters[i] || (i + 1)}</span>
+                <span>${escapeHtml(opt)}</span>
+              </button>
+            `).join('');
+          } else {
+            optGrid.style.display = 'none';
+            textForm.style.display = 'block';
+            document.getElementById('answerInput').value = '';
+            document.getElementById('submitAnswerBtn').disabled = false;
+            setTimeout(() => document.getElementById('answerInput').focus(), 150);
+          }
         }
       } else if (room.phase === 'GAME_OVER') {
         showScreen('gameOverScreen');
@@ -315,6 +337,14 @@
       }));
     }
 
+    function selectOption(opt) {
+      baaAtThem();
+      ws.send(JSON.stringify({
+        type: 'player_submit_answer',
+        answer: opt
+      }));
+    }
+
     function handleAnswer(e) {
       e.preventDefault();
       const answer = document.getElementById('answerInput').value.trim();
@@ -343,6 +373,14 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;');
     }
 
     window.onload = initWebSocket;

@@ -64,6 +64,7 @@ class GameEngine {
       blackSheepHolderId: null,
       usedQuestions: new Set(),
       currentQuestion: null,
+      currentOptions: [],
       questionIndex: 0,
       targetScore: options.targetScore || DEFAULT_TARGET_SCORE,
       roundTimerSeconds: options.roundTimerSeconds || DEFAULT_ROUND_TIMER,
@@ -133,13 +134,17 @@ class GameEngine {
   }
 
   getRandomQuestion(room) {
-    const available = this.questions.filter(q => !room.usedQuestions.has(q));
+    const available = this.questions.filter(q => {
+      const key = typeof q === 'object' && q !== null ? q.question : q;
+      return !room.usedQuestions.has(key);
+    });
     if (available.length === 0) {
       room.usedQuestions.clear();
       return this.questions[Math.floor(Math.random() * this.questions.length)];
     }
     const picked = available[Math.floor(Math.random() * available.length)];
-    room.usedQuestions.add(picked);
+    const key = typeof picked === 'object' && picked !== null ? picked.question : picked;
+    room.usedQuestions.add(key);
     return picked;
   }
 
@@ -151,7 +156,15 @@ class GameEngine {
     }
 
     room.phase = PHASES.QUESTION;
-    room.currentQuestion = this.getRandomQuestion(room);
+    const rawPicked = this.getRandomQuestion(room);
+    if (typeof rawPicked === 'object' && rawPicked !== null) {
+      room.currentQuestion = rawPicked.question;
+      room.currentOptions = Array.isArray(rawPicked.options) ? rawPicked.options : [];
+    } else {
+      room.currentQuestion = rawPicked;
+      room.currentOptions = [];
+    }
+
     room.questionIndex += 1;
     room.roundStartTime = Date.now();
     room.lastRoundResult = null;
@@ -341,6 +354,7 @@ class GameEngine {
       code: room.code,
       phase: room.phase,
       currentQuestion: room.currentQuestion,
+      currentOptions: room.currentOptions || [],
       questionIndex: room.questionIndex,
       targetScore: room.targetScore,
       roundTimerSeconds: room.roundTimerSeconds,
