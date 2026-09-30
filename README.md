@@ -1,5 +1,7 @@
 # 🐑 Black Sheep (Party Game)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Marska321/black-sheep-game)
+
 > The hilarious online social party game where you win by thinking like the flock — and avoid becoming the **Black Sheep 🖤**!
 
 Inspired by the board game *Herd Mentality*, re-imagined with the **Black Sheep** motif.
